@@ -35,9 +35,9 @@ CREATE TABLE sales (
 /* --------------------------------------------------------------------------
    1. YEARLY REVENUE & ORDER VOLUME
    -------------------------------------------------------------------------- */
-SELECT YEAR(order_date)              AS sales_year,
-       ROUND(SUM(sales), 2)         AS total_sales,
-       COUNT(DISTINCT order_id)     AS num_orders,
+SELECT YEAR(order_date) AS sales_year,
+       ROUND(SUM(sales), 2) AS total_sales,
+       COUNT(DISTINCT order_id) AS num_orders,
        ROUND(SUM(sales) / COUNT(DISTINCT order_id), 2) AS avg_order_value
 FROM sales
 GROUP BY YEAR(order_date)
@@ -48,7 +48,7 @@ ORDER BY sales_year;
    -------------------------------------------------------------------------- */
 SELECT sales_year,
        total_sales,
-       LAG(total_sales) OVER (ORDER BY sales_year)                AS prev_year_sales,
+       LAG(total_sales) OVER (ORDER BY sales_year) AS prev_year_sales,
        ROUND( (total_sales - LAG(total_sales) OVER (ORDER BY sales_year))
               / LAG(total_sales) OVER (ORDER BY sales_year) * 100, 2) AS yoy_growth_pct
 FROM (
@@ -61,7 +61,7 @@ ORDER BY sales_year;
    3. MONTHLY SALES TREND (for trend-line visuals)
    -------------------------------------------------------------------------- */
 SELECT DATE_FORMAT(order_date, '%Y-%m') AS month,
-       ROUND(SUM(sales), 2)            AS total_sales
+       ROUND(SUM(sales), 2) AS total_sales
 FROM sales
 GROUP BY month
 ORDER BY month;
@@ -70,9 +70,9 @@ ORDER BY month;
    4. REGIONAL PERFORMANCE
    -------------------------------------------------------------------------- */
 SELECT region,
-       ROUND(SUM(sales), 2)          AS total_sales,
-       ROUND(AVG(sales), 2)          AS avg_sale_value,
-       COUNT(DISTINCT order_id)      AS num_orders,
+       ROUND(SUM(sales), 2) AS total_sales,
+       ROUND(AVG(sales), 2) AS avg_sale_value,
+       COUNT(DISTINCT order_id) AS num_orders,
        ROUND(SUM(sales) * 100.0 / (SELECT SUM(sales) FROM sales), 2) AS pct_of_total_sales
 FROM sales
 GROUP BY region
