@@ -35,8 +35,8 @@ CREATE TABLE sales (
 /* --------------------------------------------------------------------------
    1. YEARLY REVENUE & ORDER VOLUME
    -------------------------------------------------------------------------- */
-SELECT YEAR(order_date) AS sales_year,
-       ROUND(SUM(sales), 2) AS total_sales,
+SELECT YEAR(order_date)        AS sales_year,
+       ROUND(SUM(sales), 2)    AS total_sales,
        COUNT(DISTINCT order_id) AS num_orders,
        ROUND(SUM(sales) / COUNT(DISTINCT order_id), 2) AS avg_order_value
 FROM sales
