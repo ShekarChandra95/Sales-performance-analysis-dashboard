@@ -23,7 +23,7 @@ CREATE TABLE sales (
     country         VARCHAR(50),
     city            VARCHAR(50),
     state           VARCHAR(50),
-    postal_code     VARCHAR(10),
+    postal_code     INT,
     region          VARCHAR(20),
     product_id      VARCHAR(20),
     category        VARCHAR(30),
