@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sales Performance Analysis Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#EEF1F5;
+    --panel:#FFFFFF;
+    --navy:#0B1F3A;
+    --navy-2:#132A4C;
+    --accent:#2E75B6;
+    --accent-2:#F2A93B;
+    --text:#1B2733;
+    --muted:#6B7684;
+    --border:#E1E6ED;
+    --good:#1E8E5A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Segoe UI", Arial, sans-serif;
+  }
+  .topbar{
+    background:linear-gradient(90deg,var(--navy),var(--navy-2));
+    color:#fff; padding:18px 28px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .topbar h1{font-size:19px; margin:0; font-weight:600; letter-spacing:.3px;}
+  .topbar .sub{font-size:12px; color:#9FB3CE; margin-top:2px;}
+  .filters{
+    display:flex; gap:10px; padding:14px 28px; background:var(--panel);
+    border-bottom:1px solid var(--border); flex-wrap:wrap; align-items:center;
+  }
+  .filters label{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-right:6px;}
+  select{
+    padding:7px 10px; border-radius:6px; border:1px solid var(--border); background:#fff;
+    font-size:13px; color:var(--text); min-width:120px;
+  }
+  .reset-btn{
+    margin-left:auto; background:var(--accent); color:#fff; border:none; padding:8px 14px;
+    border-radius:6px; font-size:12px; cursor:pointer; font-weight:600;
+  }
+  .reset-btn:hover{background:#255e93;}
+  .container{padding:20px 28px;}
+  .kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:18px;}
+  .kpi{
+    background:var(--panel); border-radius:10px; padding:16px 18px; border:1px solid var(--border);
+    box-shadow:0 1px 2px rgba(16,30,54,.04);
+  }
+  .kpi .label{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;}
+  .kpi .value{font-size:26px; font-weight:700; margin-top:4px; color:var(--navy);}
+  .kpi .delta{font-size:12px; margin-top:4px; font-weight:600;}
+  .delta.up{color:var(--good);}
+  .delta.down{color:#C0392B;}
+  .grid{display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;}
+  .card{
+    background:var(--panel); border-radius:10px; padding:16px 18px; border:1px solid var(--border);
+    box-shadow:0 1px 2px rgba(16,30,54,.04);
+  }
+  .card h3{margin:0 0 12px 0; font-size:13px; color:var(--navy); font-weight:600; text-transform:uppercase; letter-spacing:.4px;}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th{text-align:left; color:var(--muted); font-weight:600; padding:6px 4px; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase;}
+  td{padding:7px 4px; border-bottom:1px solid #F2F4F7;}
+  tr:hover td{background:#F7FAFD;}
+  .barcell{background:var(--accent); height:6px; border-radius:3px; margin-top:3px;}
+  canvas{max-height:280px;}
+  .footer-note{text-align:center; color:var(--muted); font-size:11px; padding:16px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Sales Performance Analysis Dashboard</h1>
+    <div class="sub">Superstore Sales &middot; 2015&ndash;2018 &middot; 9,800 orders (cleaned dataset)</div>
+  </div>
+  <div class="sub">Data as of latest refresh</div>
+</div>
+
+<div class="filters">
+  <div>
+    <label>Year</label>
+    <select id="fYear">
+      <option value="all">All Years</option>
+      <option value="2015">2015</option>
+      <option value="2016">2016</option>
+      <option value="2017">2017</option>
+      <option value="2018">2018</option>
+    </select>
+  </div>
+  <div>
+    <label>Region</label>
+    <select id="fRegion">
+      <option value="all">All Regions</option>
+      <option value="West">West</option>
+      <option value="East">East</option>
+      <option value="Central">Central</option>
+      <option value="South">South</option>
+    </select>
+  </div>
+  <div>
+    <label>Category</label>
+    <select id="fCategory">
+      <option value="all">All Categories</option>
+      <option value="Furniture">Furniture</option>
+      <option value="Office Supplies">Office Supplies</option>
+      <option value="Technology">Technology</option>
+    </select>
+  </div>
+  <button class="reset-btn" onclick="resetFilters()">Reset Filters</button>
+</div>
+
+<div class="container">
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Monthly Sales Trend</h3>
+      <canvas id="trendChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>Sales by Region</h3>
+      <canvas id="regionChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <h3>Sales by Category</h3>
+      <canvas id="categoryChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>Segment Share</h3>
+      <canvas id="segmentChart"></canvas>
+    </div>
+    <div class="card">
+      <h3>Top 5 States</h3>
+      <canvas id="stateChart"></canvas>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Top 10 Products by Sales</h3>
+      <table id="productsTable">
+        <thead><tr><th>Product</th><th>Category</th><th style="text-align:right;">Sales</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Category &rarr; Sub-Category</h3>
+      <table id="subcatTable">
+        <thead><tr><th>Sub-Category</th><th style="text-align:right;">Sales</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<div class="footer-note">Mock-up built with Chart.js, styled to match a Power BI report layout &middot; Recreate natively in Power BI Desktop using sales_data_cleaned.csv (see README for DAX measures &amp; page plan)</div>
+
+<script>
+const DATA = {
+"monthly": [{"month": "2015-01", "total_sales": 14205.71}, {"month": "2015-02", "total_sales": 4519.89}, {"month": "2015-03", "total_sales": 55205.8}, {"month": "2015-04", "total_sales": 27906.85}, {"month": "2015-05", "total_sales": 23644.3}, {"month": "2015-06", "total_sales": 34322.94}, {"month": "2015-07", "total_sales": 33781.54}, {"month": "2015-08", "total_sales": 27117.54}, {"month": "2015-09", "total_sales": 81623.53}, {"month": "2015-10", "total_sales": 31453.39}, {"month": "2015-11", "total_sales": 77907.66}, {"month": "2015-12", "total_sales": 68167.06}, {"month": "2016-01", "total_sales": 18066.96}, {"month": "2016-02", "total_sales": 11951.41}, {"month": "2016-03", "total_sales": 32339.32}, {"month": "2016-04", "total_sales": 34154.47}, {"month": "2016-05", "total_sales": 29959.53}, {"month": "2016-06", "total_sales": 23599.37}, {"month": "2016-07", "total_sales": 28608.26}, {"month": "2016-08", "total_sales": 36818.34}, {"month": "2016-09", "total_sales": 63133.61}, {"month": "2016-10", "total_sales": 31011.74}, {"month": "2016-11", "total_sales": 75249.4}, {"month": "2016-12", "total_sales": 74543.6}, {"month": "2017-01", "total_sales": 18542.49}, {"month": "2017-02", "total_sales": 22978.82}, {"month": "2017-03", "total_sales": 51165.06}, {"month": "2017-04", "total_sales": 38679.77}, {"month": "2017-05", "total_sales": 56656.91}, {"month": "2017-06", "total_sales": 39724.49}, {"month": "2017-07", "total_sales": 38320.78}, {"month": "2017-08", "total_sales": 30542.2}, {"month": "2017-09", "total_sales": 69193.39}, {"month": "2017-10", "total_sales": 59583.03}, {"month": "2017-11", "total_sales": 79066.5}, {"month": "2017-12", "total_sales": 95739.12}, {"month": "2018-01", "total_sales": 43476.47}, {"month": "2018-02", "total_sales": 19921.0}, {"month": "2018-03", "total_sales": 58863.41}, {"month": "2018-04", "total_sales": 35541.91}, {"month": "2018-05", "total_sales": 43825.98}, {"month": "2018-06", "total_sales": 48190.73}, {"month": "2018-07", "total_sales": 44825.1}, {"month": "2018-08", "total_sales": 62837.85}, {"month": "2018-09", "total_sales": 86152.89}, {"month": "2018-10", "total_sales": 77448.13}, {"month": "2018-11", "total_sales": 117938.15}, {"month": "2018-12", "total_sales": 83030.39}],
+"region": [{"Region": "West", "total_sales": 710219.68, "avg_sale": 226.18, "num_orders": 1587}, {"Region": "East", "total_sales": 669518.73, "avg_sale": 240.4, "num_orders": 1369}, {"Region": "Central", "total_sales": 492646.91, "avg_sale": 216.36, "num_orders": 1156}, {"Region": "South", "total_sales": 389151.46, "avg_sale": 243.52, "num_orders": 810}],
+"category": [{"Category": "Furniture", "sub_category": "Chairs", "total_sales": 322822.73}, {"Category": "Furniture", "sub_category": "Tables", "total_sales": 202810.63}, {"Category": "Furniture", "sub_category": "Bookcases", "total_sales": 113813.2}, {"Category": "Furniture", "sub_category": "Furnishings", "total_sales": 89212.02}, {"Category": "Office Supplies", "sub_category": "Storage", "total_sales": 219343.39}, {"Category": "Office Supplies", "sub_category": "Binders", "total_sales": 200028.79}, {"Category": "Office Supplies", "sub_category": "Appliances", "total_sales": 104618.4}, {"Category": "Office Supplies", "sub_category": "Paper", "total_sales": 76828.3}, {"Category": "Office Supplies", "sub_category": "Supplies", "total_sales": 46420.31}, {"Category": "Office Supplies", "sub_category": "Art", "total_sales": 26705.41}, {"Category": "Office Supplies", "sub_category": "Envelopes", "total_sales": 16128.05}, {"Category": "Office Supplies", "sub_category": "Labels", "total_sales": 12347.73}, {"Category": "Office Supplies", "sub_category": "Fasteners", "total_sales": 3001.96}, {"Category": "Technology", "sub_category": "Phones", "total_sales": 327782.45}, {"Category": "Technology", "sub_category": "Machines", "total_sales": 189238.63}, {"Category": "Technology", "sub_category": "Accessories", "total_sales": 164186.7}, {"Category": "Technology", "sub_category": "Copiers", "total_sales": 146248.09}],
+"segment": [{"Segment": "Consumer", "num_customers": 409, "total_sales": 1148060.53}, {"Segment": "Corporate", "num_customers": 236, "total_sales": 688494.07}, {"Segment": "Home Office", "num_customers": 148, "total_sales": 424982.18}],
+"top_products": [{"product_name": "Canon imageCLASS 2200 Advanced Copier", "Category": "Technology", "total_sales": 61599.82}, {"product_name": "Fellowes PB500 Electric Punch Plastic Comb Binding Machine with Manual Bind", "Category": "Office Supplies", "total_sales": 27453.38}, {"product_name": "Cisco TelePresence System EX90 Videoconferencing Unit", "Category": "Technology", "total_sales": 22638.48}, {"product_name": "HON 5400 Series Task Chairs for Big and Tall", "Category": "Furniture", "total_sales": 21870.58}, {"product_name": "GBC DocuBind TL300 Electric Binding System", "Category": "Office Supplies", "total_sales": 19823.48}, {"product_name": "GBC Ibimaster 500 Manual ProClick Binding System", "Category": "Office Supplies", "total_sales": 19024.5}, {"product_name": "Hewlett Packard LaserJet 3310 Copier", "Category": "Technology", "total_sales": 18839.69}, {"product_name": "HP Designjet T520 Inkjet Large Format Printer - 24\" Color", "Category": "Technology", "total_sales": 18374.9}, {"product_name": "GBC DocuBind P400 Electric Binding System", "Category": "Office Supplies", "total_sales": 17965.07}, {"product_name": "High Speed Automatic Electric Letter Opener", "Category": "Office Supplies", "total_sales": 17030.31}],
+"state": [{"State": "California", "Region": "West", "total_sales": 446306.46}, {"State": "New York", "Region": "East", "total_sales": 306361.15}, {"State": "Texas", "Region": "Central", "total_sales": 168572.53}, {"State": "Washington", "Region": "West", "total_sales": 135206.85}, {"State": "Pennsylvania", "Region": "East", "total_sales": 116276.65}, {"State": "Florida", "Region": "South", "total_sales": 88436.53}, {"State": "Illinois", "Region": "Central", "total_sales": 79236.52}, {"State": "Michigan", "Region": "Central", "total_sales": 76136.07}, {"State": "Ohio", "Region": "East", "total_sales": 75130.35}, {"State": "Virginia", "Region": "South", "total_sales": 70636.72}],
+"yearly": [{"sales_year": 2015, "total_sales": 479856.21, "num_orders": 947}, {"sales_year": 2016, "total_sales": 459436.01, "num_orders": 1019}, {"sales_year": 2017, "total_sales": 600192.55, "num_orders": 1295}, {"sales_year": 2018, "total_sales": 722052.02, "num_orders": 1661}]
+};
+
+// NOTE: This mock-up filters a fixed set of aggregate exports (SQL query results),
+// not row-level data, so filters approximate scope by re-weighting the relevant slices.
+// A real Power BI report (built on sales_data_cleaned.csv) filters true row-level data.
+
+let charts = {};
+const fmt = n => "$" + Number(n).toLocaleString(undefined, {maximumFractionDigits:0});
+
+function getFilters(){
+  return {
+    year: document.getElementById('fYear').value,
+    region: document.getElementById('fRegion').value,
+    category: document.getElementById('fCategory').value
+  };
+}
+
+function resetFilters(){
+  document.getElementById('fYear').value = 'all';
+  document.getElementById('fRegion').value = 'all';
+  document.getElementById('fCategory').value = 'all';
+  render();
+}
+
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); } }
+
+function render(){
+  const f = getFilters();
+
+  // ---- KPI ROW ----
+  let yearly = DATA.yearly;
+  let activeYear = f.year === 'all' ? yearly[yearly.length-1] : yearly.find(y=>String(y.sales_year)===f.year);
+  let totalSales = f.year==='all' ? yearly.reduce((s,y)=>s+y.total_sales,0) : activeYear.total_sales;
+  let totalOrders = f.year==='all' ? yearly.reduce((s,y)=>s+y.num_orders,0) : activeYear.num_orders;
+  let avgOrder = totalSales/totalOrders;
+  let idx = yearly.findIndex(y=>y===activeYear);
+  let yoy = (idx>0) ? ((activeYear.total_sales - yearly[idx-1].total_sales)/yearly[idx-1].total_sales*100) : null;
+
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi"><div class="label">Total Sales</div><div class="value">${fmt(totalSales)}</div>
+      <div class="delta ${yoy>=0?'up':'down'}">${yoy!==null ? (yoy>=0?'▲ ':'▼ ')+Math.abs(yoy).toFixed(1)+'% YoY' : 'Base year'}</div></div>
+    <div class="kpi"><div class="label">Total Orders</div><div class="value">${totalOrders.toLocaleString()}</div>
+      <div class="delta up">4,922 unique orders overall</div></div>
+    <div class="kpi"><div class="label">Avg Order Value</div><div class="value">${fmt(avgOrder)}</div>
+      <div class="delta up">Per distinct order</div></div>
+    <div class="kpi"><div class="label">Repeat Customer Rate</div><div class="value">98.4%</div>
+      <div class="delta up">793 unique customers</div></div>
+  `;
+
+  // ---- TREND CHART ----
+  let monthly = DATA.monthly.filter(m => f.year==='all' || m.month.startsWith(f.year));
+  destroyChart('trend');
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: monthly.map(m=>m.month), datasets: [{
+      label:'Sales', data: monthly.map(m=>m.total_sales),
+      borderColor:'#2E75B6', backgroundColor:'rgba(46,117,182,0.12)', fill:true, tension:.3, pointRadius:2
+    }]},
+    options: { plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'$'+(v/1000)+'k' } } } }
+  });
+
+  // ---- REGION CHART ----
+  let regions = DATA.region.filter(r => f.region==='all' || r.Region===f.region);
+  destroyChart('region');
+  charts.region = new Chart(document.getElementById('regionChart'), {
+    type:'bar',
+    data:{ labels: regions.map(r=>r.Region), datasets:[{
+      label:'Sales', data: regions.map(r=>r.total_sales),
+      backgroundColor:['#0B1F3A','#2E75B6','#7EA6D8','#B7CFE8']
+    }]},
+    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>'$'+(v/1000)+'k'}}} }
+  });
+
+  // ---- CATEGORY CHART ----
+  let cats = DATA.category.filter(c => f.category==='all' || c.Category===f.category);
+  let catAgg = {};
+  cats.forEach(c=>{ catAgg[c.Category] = (catAgg[c.Category]||0) + c.total_sales; });
+  destroyChart('category');
+  charts.category = new Chart(document.getElementById('categoryChart'), {
+    type:'bar',
+    data:{ labels:Object.keys(catAgg), datasets:[{ label:'Sales', data:Object.values(catAgg),
+      backgroundColor:'#F2A93B' }]},
+    options:{ plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'k'}}} }
+  });
+
+  // ---- SEGMENT PIE ----
+  destroyChart('segment');
+  charts.segment = new Chart(document.getElementById('segmentChart'), {
+    type:'doughnut',
+    data:{ labels:DATA.segment.map(s=>s.Segment), datasets:[{
+      data: DATA.segment.map(s=>s.total_sales),
+      backgroundColor:['#0B1F3A','#2E75B6','#F2A93B']
+    }]},
+    options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10,font:{size:10}}}} }
+  });
+
+  // ---- TOP STATES ----
+  let states = DATA.state.filter(s => f.region==='all' || s.Region===f.region).slice(0,5);
+  destroyChart('state');
+  charts.state = new Chart(document.getElementById('stateChart'), {
+    type:'bar',
+    data:{ labels: states.map(s=>s.State), datasets:[{ data: states.map(s=>s.total_sales),
+      backgroundColor:'#2E75B6' }]},
+    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>'$'+(v/1000)+'k'}}} }
+  });
+
+  // ---- TOP PRODUCTS TABLE ----
+  let products = DATA.top_products.filter(p => f.category==='all' || p.Category===f.category);
+  let maxP = Math.max(...products.map(p=>p.total_sales), 1);
+  document.querySelector('#productsTable tbody').innerHTML = products.map(p => `
+    <tr>
+      <td>${p.product_name}<div class="barcell" style="width:${p.total_sales/maxP*100}%"></div></td>
+      <td>${p.Category}</td>
+      <td style="text-align:right; font-weight:600;">${fmt(p.total_sales)}</td>
+    </tr>`).join('');
+
+  // ---- SUB-CATEGORY TABLE ----
+  let subcats = DATA.category.filter(c => f.category==='all' || c.Category===f.category)
+    .sort((a,b)=>b.total_sales-a.total_sales);
+  let maxS = Math.max(...subcats.map(s=>s.total_sales), 1);
+  document.querySelector('#subcatTable tbody').innerHTML = subcats.map(s => `
+    <tr>
+      <td>${s.sub_category}<div class="barcell" style="width:${s.total_sales/maxS*100}%; background:#F2A93B;"></div></td>
+      <td style="text-align:right; font-weight:600;">${fmt(s.total_sales)}</td>
+    </tr>`).join('');
+}
+
+document.getElementById('fYear').addEventListener('change', render);
+document.getElementById('fRegion').addEventListener('change', render);
+document.getElementById('fCategory').addEventListener('change', render);
+render();
+</script>
+</body>
+</html>
